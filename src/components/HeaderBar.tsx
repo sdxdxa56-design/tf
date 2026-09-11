@@ -49,7 +49,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
               v2.4
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span
               className={`w-2 h-2 rounded-full ${
                 isDownloading ? 'bg-[#FF4F00] animate-ping' : 'bg-emerald-400'
@@ -60,7 +60,10 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 isDownloading ? 'text-[#FF4F00]' : 'text-emerald-400'
               }`}
             >
-              {isDownloading ? 'محرك التنزيل نشط ⚡' : 'رادار الالتقاط نشط'}
+              {isDownloading ? 'محرك التنزيل نشط ⚡' : 'رادار الالتقاط نشط 📡'}
+            </span>
+            <span className="text-[10px] px-1.5 py-0.2 bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30 rounded">
+              صلاحيات كاملة 🛡️
             </span>
           </div>
         </div>

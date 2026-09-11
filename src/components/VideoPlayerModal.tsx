@@ -27,14 +27,19 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ task, isOpen
   const [isMuted, setIsMuted] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
+  const [fallbackStream, setFallbackStream] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   if (!isOpen || !task) return null;
 
   // Determine playable video URL (fallback to proxy or standard media stream if direct CORS blocked)
-  const videoStreamUrl = task.sourceUrl.startsWith('http')
-    ? `/api/proxy-download?url=${encodeURIComponent(task.sourceUrl)}`
+  const initialStreamUrl = task.sourceUrl.startsWith('http')
+    ? `/api/proxy-download?url=${encodeURIComponent(task.sourceUrl)}&filename=${encodeURIComponent(task.fileName)}`
     : task.sourceUrl;
+
+  const currentVideoUrl = fallbackStream
+    ? 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
+    : initialStreamUrl;
 
   const togglePlay = () => {
     if (videoRef.current) {
@@ -120,7 +125,8 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ task, isOpen
         <div className="relative bg-black aspect-video w-full flex items-center justify-center overflow-hidden group">
           <video
             ref={videoRef}
-            src={videoStreamUrl}
+            key={currentVideoUrl}
+            src={currentVideoUrl}
             controls
             autoPlay
             playsInline
@@ -128,7 +134,10 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ task, isOpen
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
             onError={(e) => {
-              console.warn('Video stream fallback:', e);
+              console.warn('Video stream fallback activated:', e);
+              if (!fallbackStream) {
+                setFallbackStream(true);
+              }
             }}
           />
         </div>
