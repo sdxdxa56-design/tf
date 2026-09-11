@@ -193,6 +193,20 @@ export default function App() {
 
       {/* Main Body Stage */}
       <main className="flex-1 max-w-5xl w-full mx-auto px-3 sm:px-4 py-3 sm:py-4 flex flex-col gap-3.5 overflow-x-hidden">
+        {/* Permission Notice Banner matching screenshot 2 */}
+        <div className="p-3 rounded-2xl bg-[#1D1713] border border-amber-500/40 text-xs flex items-center justify-between dir-rtl shadow-lg">
+          <div className="flex items-center gap-2 text-amber-300 font-semibold text-[11px] sm:text-xs">
+            <span className="text-amber-400">⚠️</span>
+            <span>لتفعيل ميزة التقاط الروابط التلقائية، يرجى منح إذن "الظهور فوق التطبيقات"</span>
+          </div>
+          <button
+            onClick={() => setToastMessage({ title: 'إذن التطبيق', desc: 'تم منح إذن الظهور فوق التطبيقات بنجاح! ✅' })}
+            className="px-3 py-1 rounded-xl bg-[#FF4F00] text-white font-bold text-xs shrink-0 hover:bg-[#FF5E14] transition-all cursor-pointer"
+          >
+            تفعيل
+          </button>
+        </div>
+
         {/* Toast Notification */}
         {toastMessage && (
           <div className="p-3 rounded-xl bg-[#18151F] border border-[#FF4F00] text-xs flex items-center justify-between dir-rtl shadow-lg animate-fade-in">
