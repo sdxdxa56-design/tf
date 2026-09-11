@@ -24,6 +24,7 @@ interface DownloadsManagerSheetProps {
   onResumeTask: (id: string) => void;
   onRemoveTask: (id: string) => void;
   onClearCompleted: () => void;
+  onPlayVideo?: (task: DownloadTask) => void;
 }
 
 export const DownloadsManagerSheet: React.FC<DownloadsManagerSheetProps> = ({
@@ -34,11 +35,24 @@ export const DownloadsManagerSheet: React.FC<DownloadsManagerSheetProps> = ({
   onResumeTask,
   onRemoveTask,
   onClearCompleted,
+  onPlayVideo,
 }) => {
   const [filter, setFilter] = useState<'all' | 'active' | 'completed' | 'paused'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   if (!isOpen) return null;
+
+  const handleSaveDirect = (task: DownloadTask) => {
+    const proxyDownloadUrl = `/api/proxy-download?url=${encodeURIComponent(
+      task.sourceUrl
+    )}&filename=${encodeURIComponent(task.fileName)}`;
+    const a = document.createElement('a');
+    a.href = proxyDownloadUrl;
+    a.download = task.fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
 
   const filteredTasks = tasks.filter((t) => {
     if (filter === 'active' && t.status !== 'downloading') return false;
@@ -172,15 +186,23 @@ export const DownloadsManagerSheet: React.FC<DownloadsManagerSheetProps> = ({
                         </button>
                       )}
                       {isCompleted && (
-                        <a
-                          href={t.sourceUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors cursor-pointer"
-                          title="تنزيل مباشر"
-                        >
-                          <Download className="w-4 h-4" />
-                        </a>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => onPlayVideo && onPlayVideo(t)}
+                            className="px-2.5 py-1 rounded-lg bg-[#FF4F00] text-white font-bold text-[11px] flex items-center gap-1 hover:bg-[#FF5E14] transition-colors cursor-pointer"
+                            title="تشغيل الفيديو"
+                          >
+                            <Play className="w-3.5 h-3.5 fill-current" />
+                            <span>تشغيل</span>
+                          </button>
+                          <button
+                            onClick={() => handleSaveDirect(t)}
+                            className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors cursor-pointer"
+                            title="حفظ في المعرض / مجلد التنزيلات"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                        </div>
                       )}
                       <button
                         onClick={() => onRemoveTask(t.id)}

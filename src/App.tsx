@@ -8,6 +8,7 @@ import { InAppStealthBrowser } from './components/InAppStealthBrowser';
 import { DownloadsManagerSheet } from './components/DownloadsManagerSheet';
 import { SettingsModal } from './components/SettingsModal';
 import { FloatingLinkBubble } from './components/FloatingLinkBubble';
+import { VideoPlayerModal } from './components/VideoPlayerModal';
 import { SmartUrlFilter } from './utils/smartUrlFilter';
 
 export default function App() {
@@ -23,6 +24,7 @@ export default function App() {
   const [isBrowserOpen, setIsBrowserOpen] = useState(false);
   const [isDownloadsOpen, setIsDownloadsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [activeVideoTask, setActiveVideoTask] = useState<DownloadTask | null>(null);
   const [floatingLink, setFloatingLink] = useState<DetectedLink | null>(null);
   const [toastMessage, setToastMessage] = useState<{ title: string; desc: string; isError?: boolean } | null>(null);
 
@@ -190,7 +192,7 @@ export default function App() {
       />
 
       {/* Main Body Stage */}
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-4 flex flex-col gap-4">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-3 sm:px-4 py-3 sm:py-4 flex flex-col gap-3.5 overflow-x-hidden">
         {/* Toast Notification */}
         {toastMessage && (
           <div className="p-3 rounded-xl bg-[#18151F] border border-[#FF4F00] text-xs flex items-center justify-between dir-rtl shadow-lg animate-fade-in">
@@ -214,6 +216,7 @@ export default function App() {
           onPause={handlePause}
           onResume={handleResume}
           onClear={() => {}}
+          onPlayVideo={(task) => setActiveVideoTask(task)}
         />
 
         {/* Control Input & Preset Area */}
@@ -225,6 +228,13 @@ export default function App() {
           onResume={handleResume}
         />
       </main>
+
+      {/* Video Player & Gallery Export Modal */}
+      <VideoPlayerModal
+        task={activeVideoTask}
+        isOpen={!!activeVideoTask}
+        onClose={() => setActiveVideoTask(null)}
+      />
 
       {/* Floating Link Bubble Toast */}
       <FloatingLinkBubble
@@ -268,6 +278,7 @@ export default function App() {
           }
         }}
         onClearCompleted={() => downloadEngine.clearCompleted()}
+        onPlayVideo={(task) => setActiveVideoTask(task)}
       />
 
       {/* Hardware Settings Tuning Modal */}

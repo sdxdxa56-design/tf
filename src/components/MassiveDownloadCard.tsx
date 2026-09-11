@@ -17,6 +17,9 @@ import {
   Database,
   ShieldCheck,
   Zap,
+  Play,
+  Download,
+  CheckCircle2,
 } from 'lucide-react';
 
 interface MassiveDownloadCardProps {
@@ -25,6 +28,7 @@ interface MassiveDownloadCardProps {
   onPause: () => void;
   onResume: () => void;
   onClear: () => void;
+  onPlayVideo?: (task: DownloadTask) => void;
 }
 
 export const MassiveDownloadCard: React.FC<MassiveDownloadCardProps> = ({
@@ -33,6 +37,7 @@ export const MassiveDownloadCard: React.FC<MassiveDownloadCardProps> = ({
   onPause,
   onResume,
   onClear,
+  onPlayVideo,
 }) => {
   const [showSegments, setShowSegments] = useState(false);
 
@@ -66,26 +71,38 @@ export const MassiveDownloadCard: React.FC<MassiveDownloadCardProps> = ({
     return <FileCode className="w-5 h-5 text-[#FF4F00]" />;
   };
 
+  const handleSaveDirect = () => {
+    const proxyDownloadUrl = `/api/proxy-download?url=${encodeURIComponent(
+      task.sourceUrl
+    )}&filename=${encodeURIComponent(task.fileName)}`;
+    const a = document.createElement('a');
+    a.href = proxyDownloadUrl;
+    a.download = task.fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   return (
-    <div className="relative rounded-2xl border border-[#FF4F00]/30 bg-[#141318] shadow-2xl overflow-hidden transition-all duration-300">
+    <div className="relative rounded-2xl border border-[#FF4F00]/30 bg-[#141318] shadow-2xl overflow-hidden transition-all duration-300 w-full max-w-full">
       {/* Background Speed Waveform Canvas */}
       <div className="absolute inset-0 h-44 bottom-0 top-auto opacity-70 pointer-events-none z-0">
         <SpeedWaveformCanvas speedHistory={speedHistory} isDownloading={isDownloading} />
       </div>
 
-      <div className="relative z-10 p-5 flex flex-col gap-4">
+      <div className="relative z-10 p-4 sm:p-5 flex flex-col gap-3.5">
         {/* Top Header: File Info & Thread Badge */}
-        <div className="flex items-start justify-between gap-3 dir-rtl">
-          <div className="flex items-start gap-3">
-            <div className="w-11 h-11 rounded-xl bg-[#221F28] border border-[#FF4F00]/40 flex items-center justify-center shrink-0 shadow-md">
+        <div className="flex items-start justify-between gap-2.5 dir-rtl">
+          <div className="flex items-start gap-2.5 min-w-0">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[#221F28] border border-[#FF4F00]/40 flex items-center justify-center shrink-0 shadow-md">
               {getFileIcon(task.fileName)}
             </div>
             <div className="flex flex-col min-w-0">
-              <h2 className="text-white text-sm font-bold truncate max-w-[260px] sm:max-w-md font-mono">
+              <h2 className="text-white text-xs sm:text-sm font-bold truncate max-w-[180px] sm:max-w-md font-mono">
                 {task.fileName}
               </h2>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[11px] text-[#A0999C] truncate max-w-[220px]">
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-[10px] sm:text-[11px] text-[#A0999C] truncate max-w-[180px] sm:max-w-[240px]">
                   {isDownloading
                     ? `جاري التنزيل المتوازي عبر ${task.threadCount} مسار ⚡`
                     : isPaused
@@ -95,7 +112,7 @@ export const MassiveDownloadCard: React.FC<MassiveDownloadCardProps> = ({
                     : 'في وضع الاستعداد'}
                 </span>
                 {task.provider && (
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#1E1A22] text-[#FF9D00] border border-[#FF9D00]/30 font-semibold truncate hidden sm:inline-block">
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#1E1A22] text-[#FF9D00] border border-[#FF9D00]/30 font-semibold truncate hidden sm:inline-block">
                     {task.provider}
                   </span>
                 )}
@@ -103,29 +120,58 @@ export const MassiveDownloadCard: React.FC<MassiveDownloadCardProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs px-2.5 py-1 rounded-lg bg-[#1E1A22] text-[#FF4F00] font-bold border border-[#FF4F00]/30 font-mono shadow-sm">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[10px] sm:text-xs px-2 py-0.5 sm:py-1 rounded-lg bg-[#1E1A22] text-[#FF4F00] font-bold border border-[#FF4F00]/30 font-mono shadow-sm">
               {task.threadCount > 1 ? `${task.threadCount} خيوط` : 'مسار واحد'}
             </span>
           </div>
         </div>
 
+        {/* Action Bar for Completed Tasks */}
+        {isCompleted && (
+          <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-500/10 via-[#181520] to-[#14121A] border border-emerald-500/40 flex flex-col sm:flex-row items-center justify-between gap-2.5 dir-rtl animate-fade-in shadow-lg">
+            <div className="flex items-center gap-2 text-emerald-400 font-mono text-xs font-bold">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>تم اكتمال التحليل والتنزيل بنجاح 100%!</span>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                onClick={() => onPlayVideo && onPlayVideo(task)}
+                className="flex-1 sm:flex-none py-2 px-3.5 rounded-lg bg-[#FF4F00] hover:bg-[#FF5E14] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-[#FF4F00]/30 cursor-pointer transition-all"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>تشغيل الفيديو 🎬</span>
+              </button>
+
+              <button
+                onClick={handleSaveDirect}
+                className="flex-1 sm:flex-none py-2 px-3.5 rounded-lg bg-[#221E2C] hover:bg-[#2C2738] border border-[#3A334A] text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+              >
+                <Download className="w-3.5 h-3.5 text-[#FF9D00]" />
+                <span>حفظ في المعرض 📥</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Speed Telemetry & Main Percentage */}
-        <div className="flex items-end justify-between px-1 pt-2 dir-rtl">
+        <div className="flex items-end justify-between px-1 pt-1 dir-rtl">
           <div className="flex flex-col">
-            <span className="text-[11px] text-[#A0999C] font-semibold">سرعة التنزيل الحالية</span>
-            <span className="text-3xl font-black text-white font-mono tracking-tight">
+            <span className="text-[10px] sm:text-[11px] text-[#A0999C] font-semibold">سرعة التنزيل الحالية</span>
+            <span className="text-2xl sm:text-3xl font-black text-white font-mono tracking-tight">
               {SmartUrlFilter.formatSpeed(task.speedBytesPerSec)}
             </span>
           </div>
 
           <div className="flex items-baseline font-mono">
-            <span className="text-4xl font-black text-[#FF4F00] drop-shadow-[0_2px_8px_rgba(255,79,0,0.4)]">
+            <span className="text-3xl sm:text-4xl font-black text-[#FF4F00] drop-shadow-[0_2px_8px_rgba(255,79,0,0.4)]">
               {percentInt}
             </span>
-            <span className="text-xl font-bold text-[#FF9D00]">%</span>
+            <span className="text-lg sm:text-xl font-bold text-[#FF9D00]">%</span>
           </div>
         </div>
+
 
         {/* 16-Segment Multi-Thread Progress Bar */}
         <div className="flex flex-col gap-1.5">
