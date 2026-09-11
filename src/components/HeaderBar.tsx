@@ -1,11 +1,12 @@
-import React from 'react';
-import { Zap, Globe, Folder, Settings, ShieldCheck } from 'lucide-react';
+import React, { useState } from 'react';
+import { Zap, Globe, Folder, Settings, GitBranch, Loader2, Check } from 'lucide-react';
 
 interface HeaderBarProps {
   isDownloading: boolean;
   onOpenBrowser: () => void;
   onOpenDownloads: () => void;
   onOpenSettings: () => void;
+  onGithubPush?: () => Promise<void>;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
@@ -13,7 +14,25 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onOpenBrowser,
   onOpenDownloads,
   onOpenSettings,
+  onGithubPush,
 }) => {
+  const [isPushing, setIsPushing] = useState(false);
+  const [pushedSuccess, setPushedSuccess] = useState(false);
+
+  const handlePush = async () => {
+    if (!onGithubPush || isPushing) return;
+    setIsPushing(true);
+    setPushedSuccess(false);
+    try {
+      await onGithubPush();
+      setPushedSuccess(true);
+      setTimeout(() => setPushedSuccess(false), 3000);
+    } catch (_) {
+    } finally {
+      setIsPushing(false);
+    }
+  };
+
   return (
     <div className="flex items-center justify-between px-2 py-3 border-b border-[#1E1C24] bg-[#0A0A0C]/90 backdrop-blur-md sticky top-0 z-40">
       {/* App Identity */}
@@ -49,6 +68,32 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
       {/* Top Action Pills */}
       <div className="flex items-center gap-2">
+        {/* GitHub Sync Button */}
+        <button
+          onClick={handlePush}
+          disabled={isPushing}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#181520] hover:bg-[#252030] text-[#00E5FF] border border-[#00E5FF]/40 shadow-md transition-all active:scale-95 text-xs font-bold cursor-pointer disabled:opacity-50"
+          title="دفع التعديلات المباشرة إلى GitHub وبناء APK"
+        >
+          {isPushing ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#00E5FF]" />
+              <span>جاري الرفع...</span>
+            </>
+          ) : pushedSuccess ? (
+            <>
+              <Check className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-emerald-400">تم المزامنة!</span>
+            </>
+          ) : (
+            <>
+              <GitBranch className="w-3.5 h-3.5 text-[#00E5FF]" />
+              <span className="hidden sm:inline">مزامنة GitHub 🚀</span>
+              <span className="sm:hidden">GitHub</span>
+            </>
+          )}
+        </button>
+
         <button
           onClick={onOpenBrowser}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1C1A20] hover:bg-[#25222B] text-white border border-[#2C2833] shadow-md transition-all active:scale-95 text-xs font-semibold cursor-pointer"

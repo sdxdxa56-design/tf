@@ -138,6 +138,43 @@ export default function App() {
     }
   };
 
+  const handleGithubPush = async () => {
+    setToastMessage({
+      title: 'جاري رفع التعديلات والتحديثات إلى GitHub... 🚀',
+      desc: 'جاري تنفيذ أمر المزامنة وإرسال الكود إلى sdxdxa56-design/tf',
+    });
+
+    try {
+      const resp = await fetch('/api/github/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'Sync updates from AI Studio workspace' }),
+      });
+
+      const data = await resp.json();
+      if (data && data.success) {
+        setToastMessage({
+          title: 'تم دفع التعديلات بنجاح! 🚀',
+          desc: data.message || 'تم تحديث الكود وبناء النسخة المباشرة على GitHub',
+        });
+      } else {
+        setToastMessage({
+          title: 'خطأ أثناء الرفع',
+          desc: data.error || 'تعذر الاتصال بـ GitHub API',
+          isError: true,
+        });
+      }
+    } catch (err: any) {
+      setToastMessage({
+        title: 'خطأ في عملية المزامنة',
+        desc: err.message || 'تعذر التواصل مع السيرفر المحلي',
+        isError: true,
+      });
+    }
+
+    setTimeout(() => setToastMessage(null), 5000);
+  };
+
   const isDownloading = currentTask ? currentTask.status === 'downloading' : false;
   const isPaused = currentTask ? currentTask.status === 'paused' : false;
 
@@ -149,6 +186,7 @@ export default function App() {
         onOpenBrowser={() => setIsBrowserOpen(true)}
         onOpenDownloads={() => setIsDownloadsOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onGithubPush={handleGithubPush}
       />
 
       {/* Main Body Stage */}

@@ -3,6 +3,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 import axios from 'axios';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 const app = express();
 const PORT = 3000;
@@ -344,6 +348,43 @@ app.get('/api/proxy-download', async (req, res) => {
     response.data.pipe(res);
   } catch (err: any) {
     res.status(500).send('Proxy Download Error: ' + err.message);
+  }
+});
+
+// GitHub Direct Push API Endpoint
+app.post('/api/github/push', async (req, res) => {
+  try {
+    const customMessage = req.body?.message || `update: Sync app changes to GitHub (${new Date().toLocaleString('ar-SA')})`;
+
+    await execAsync('git add .');
+    try {
+      await execAsync(`git commit -m "${customMessage.replace(/"/g, '\\"')}"`);
+    } catch (commitErr: any) {
+      if (commitErr.stdout?.includes('nothing to commit') || commitErr.stderr?.includes('nothing to commit')) {
+        return res.json({
+          success: true,
+          repoUrl: 'https://github.com/sdxdxa56-design/tf',
+          message: 'جميع التغييرات والإصلاحات محدثة ومتزامنة مسبقاً على جيت هاب! ✅',
+          timestamp: Date.now(),
+        });
+      }
+    }
+
+    const { stdout, stderr } = await execAsync('git push origin main');
+
+    return res.json({
+      success: true,
+      repoUrl: 'https://github.com/sdxdxa56-design/tf',
+      message: 'تم دفع التغييرات والتحديثات بنجاح إلى جيت هاب! 🚀',
+      stdout,
+      stderr,
+      timestamp: Date.now(),
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      error: err.message || 'خطأ أثناء الدفع إلى GitHub',
+    });
   }
 });
 
