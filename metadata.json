@@ -1,0 +1,6 @@
+{
+  "name": "PulseSphere - HyperPulse Download Engine",
+  "description": "Enterprise-grade multi-threaded parallel download engine, stealth cockpit UI, social media stream extractor, and download manager.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
