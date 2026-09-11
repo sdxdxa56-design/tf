@@ -1,0 +1,8 @@
+{
+  "appId": "com.hyperpulse.downloader",
+  "appName": "HyperPulse",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
