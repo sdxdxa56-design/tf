@@ -1,0 +1,130 @@
+name: Build HyperPulse Android APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Release HyperPulse APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java Development Kit (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter Environment
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Initialize Android Scaffolding (if needed)
+        run: |
+          if [ ! -f "android/build.gradle" ]; then
+            flutter create --platforms=android .
+          fi
+
+      - name: Install Flutter Dependencies
+        run: flutter pub get
+
+      - name: Ensure Kotlin 2.1.0 and Package Consistency
+        run: |
+          # Guarantee Kotlin 2.1.0 in settings.gradle
+          sed -i 's/org.jetbrains.kotlin.android" version "[^"]*"/org.jetbrains.kotlin.android" version "2.1.0"/' android/settings.gradle || true
+          
+          # Clean up any legacy app package directories
+          rm -rf android/app/src/main/kotlin/com/hyperpulse || true
+
+          # Clean up any legacy or corrupt mipmap directories
+          rm -rf android/app/src/main/res/mipmap-mdpi \
+                 android/app/src/main/res/mipmap-hdpi \
+                 android/app/src/main/res/mipmap-xhdpi \
+                 android/app/src/main/res/mipmap-xxhdpi \
+                 android/app/src/main/res/mipmap-xxxhdpi \
+                 flutter_engine/android/app/src/main/res/mipmap-mdpi \
+                 flutter_engine/android/app/src/main/res/mipmap-hdpi \
+                 flutter_engine/android/app/src/main/res/mipmap-xhdpi \
+                 flutter_engine/android/app/src/main/res/mipmap-xxhdpi \
+                 flutter_engine/android/app/src/main/res/mipmap-xxxhdpi || true
+
+      - name: Configure Permanent Release Keystore & Signature
+        run: |
+          mkdir -p android/app
+          KEYSTORE_PATH="android/app/pulsesphere-keystore.jks"
+          KEY_PROPS="android/key.properties"
+
+          if ! keytool -list -keystore "$KEYSTORE_PATH" -storepass "PulseSphere@2026SecureKey!" -storetype PKCS12 > /dev/null 2>&1; then
+            echo "Generating standard Java PKCS12 keystore via Java keytool..."
+            rm -f "$KEYSTORE_PATH"
+            keytool -genkeypair -v \
+              -keystore "$KEYSTORE_PATH" \
+              -storetype PKCS12 \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -alias pulsesphere \
+              -storepass "PulseSphere@2026SecureKey!" \
+              -keypass "PulseSphere@2026SecureKey!" \
+              -dname "CN=PulseSphere, OU=Mobile, O=PulseSphere Core, L=Dubai, ST=Dubai, C=AE"
+          else
+            echo "Keystore verified successfully with keytool."
+          fi
+
+          cat <<EOF > "$KEY_PROPS"
+          storePassword=PulseSphere@2026SecureKey!
+          keyPassword=PulseSphere@2026SecureKey!
+          keyAlias=pulsesphere
+          storeFile=app/pulsesphere-keystore.jks
+          EOF
+
+      - name: Clean and Prepare Build Environment
+        run: |
+          rm -rf android/app/src/main/res/mipmap-mdpi \
+                 android/app/src/main/res/mipmap-hdpi \
+                 android/app/src/main/res/mipmap-xhdpi \
+                 android/app/src/main/res/mipmap-xxhdpi \
+                 android/app/src/main/res/mipmap-xxxhdpi \
+                 flutter_engine/android/app/src/main/res/mipmap-mdpi \
+                 flutter_engine/android/app/src/main/res/mipmap-hdpi \
+                 flutter_engine/android/app/src/main/res/mipmap-xhdpi \
+                 flutter_engine/android/app/src/main/res/mipmap-xxhdpi \
+                 flutter_engine/android/app/src/main/res/mipmap-xxxhdpi || true
+          flutter clean
+          flutter pub get
+
+      - name: Build Universal Release APK
+        run: |
+          rm -rf android/app/src/main/res/mipmap-mdpi \
+                 android/app/src/main/res/mipmap-hdpi \
+                 android/app/src/main/res/mipmap-xhdpi \
+                 android/app/src/main/res/mipmap-xxhdpi \
+                 android/app/src/main/res/mipmap-xxxhdpi || true
+          flutter build apk --release --no-tree-shake-icons --android-skip-build-dependency-validation
+
+      - name: Build Split ABI APKs (Optimized size)
+        run: flutter build apk --release --split-per-abi --no-tree-shake-icons --android-skip-build-dependency-validation
+
+      - name: Upload Universal APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PulseSphere-Universal-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+
+      - name: Upload Split ABI APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: PulseSphere-Split-APKs
+          path: build/app/outputs/flutter-apk/app-*-release.apk
+          if-no-files-found: ignore
